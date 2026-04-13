@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ONX Members Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --black: #000;
+      --white: #fff;
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #e5e5e5;
+      --gray-300: #d4d4d4;
+      --gray-400: #a3a3a3;
+      --gray-500: #737373;
+      --gray-600: #525252;
+      --gray-700: #404040;
+      --gray-800: #262626;
+      --gray-900: #171717;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+    }
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Password Gate ── */
+    .pw-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--black);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pw-card { text-align: center; max-width: 340px; width: 100%; padding: 48px 40px; }
+    .pw-card img { height: 44px; margin-bottom: 36px; filter: brightness(0) invert(1); }
+    .pw-card p { font-size: 0.9rem; color: var(--gray-400); margin-bottom: 28px; font-weight: 300; }
+    .pw-input {
+      width: 100%; padding: 12px 16px; font-size: 1rem; font-family: 'Inter', sans-serif;
+      border: 1px solid var(--gray-700); border-radius: 3px; outline: none;
+      background: var(--black); color: var(--white);
+      transition: border-color 0.2s; margin-bottom: 16px;
+    }
+    .pw-input:focus { border-color: var(--white); }
+    .pw-input::placeholder { color: var(--gray-600); }
+    .pw-submit {
+      width: 100%; padding: 12px; font-size: 0.95rem; font-family: 'Inter', sans-serif;
+      font-weight: 500; background: var(--white); color: var(--black);
+      border: none; border-radius: 3px; cursor: pointer; transition: opacity 0.15s;
+    }
+    .pw-submit:hover { opacity: 0.85; }
+    .pw-error { color: #f87171; font-size: 0.85rem; margin-top: 14px; display: none; }
+
+    /* ── Identity Picker ── */
+    .identity-overlay {
+      position: fixed; inset: 0; z-index: 9998;
+      background: var(--black);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .identity-card {
+      text-align: center; max-width: 400px; width: 100%; padding: 48px 40px;
+    }
+    .identity-card img { height: 44px; margin-bottom: 36px; filter: brightness(0) invert(1); }
+    .identity-card p { font-size: 0.9rem; color: var(--gray-400); margin-bottom: 24px; font-weight: 300; }
+    .identity-search {
+      width: 100%; padding: 12px 16px; font-size: 1rem; font-family: 'Inter', sans-serif;
+      border: 1px solid var(--gray-700); border-radius: 3px; outline: none;
+      background: var(--black); color: var(--white);
+      transition: border-color 0.2s; margin-bottom: 8px;
+    }
+    .identity-search:focus { border-color: var(--white); }
+    .identity-search::placeholder { color: var(--gray-600); }
+    .identity-list {
+      max-height: 260px; overflow-y: auto; text-align: left;
+      border: 1px solid var(--gray-700); border-radius: 3px;
+      background: var(--gray-900);
+    }
+    .identity-item {
+      padding: 10px 16px; font-size: 0.9rem; color: var(--gray-300);
+      cursor: pointer; transition: background 0.1s;
+      border-bottom: 1px solid var(--gray-800);
+    }
+    .identity-item:last-child { border-bottom: none; }
+    .identity-item:hover { background: var(--gray-800); color: var(--white); }
+    .identity-item.hidden { display: none; }
+
+    /* ── Page Header ── */
+    .page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky; top: 0; z-index: 100;
+      padding: 0 32px;
+    }
+    .header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 52px; gap: 24px;
+    }
+    .header-left {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .header-left img { height: 32px; }
+    .page-title {
+      font-size: 0.85rem; font-weight: 600; color: var(--gray-900);
+      letter-spacing: -0.01em;
+    }
+    .header-right {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: var(--gray-400);
+    }
+    .header-right strong { color: var(--gray-700); font-weight: 600; }
+    .change-link {
+      color: var(--gray-400); text-decoration: none;
+      font-size: 0.72rem; cursor: pointer;
+    }
+    .change-link:hover { color: var(--gray-600); }
+
+    /* ── Content ── */
+    .portal-content {
+      margin: 0 auto;
+      padding: 20px 32px 60px;
+    }
+    .section-header {
+      margin-bottom: 16px;
+    }
+    .section-header h2 {
+      font-size: 1rem; font-weight: 600; color: var(--gray-900);
+      letter-spacing: -0.01em; margin-bottom: 4px;
+    }
+    .section-header p {
+      font-size: 0.82rem; color: var(--gray-400); font-weight: 400;
+    }
+
+    /* ── Advisor Grid ── */
+    .advisor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+
+    /* ── Advisor Card ── */
+    .advisor-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex; flex-direction: column;
+      transition: box-shadow 0.15s;
+    }
+    .advisor-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .advisor-card.highlighted {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+    }
+    .card-header { margin-bottom: 6px; }
+    .advisor-name {
+      font-size: 0.85rem; font-weight: 600; color: var(--black);
+      letter-spacing: -0.01em; line-height: 1.3;
+    }
+    .advisor-org {
+      font-size: 0.68rem; color: var(--gray-400); margin-top: 1px;
+      font-weight: 400; line-height: 1.3;
+    }
+
+    /* Tags */
+    .tags-row {
+      display: flex; flex-wrap: wrap; gap: 3px;
+      margin-bottom: 8px;
+    }
+    .tag-pill {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; font-size: 0.65rem; font-weight: 500;
+      border-radius: 99px; background: var(--white); color: var(--gray-700);
+      border: 1px solid var(--gray-200);
+      letter-spacing: 0.01em; line-height: 1.3;
+    }
+    .tag-pill.overlap {
+      background: var(--gray-900); color: var(--white); border-color: var(--gray-900);
+    }
+
+    /* Recommended badge */
+    .recommended-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; font-size: 0.65rem; font-weight: 500;
+      border-radius: 99px; background: var(--accent-light); color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    /* Availability */
+    .availability {
+      font-size: 0.7rem; color: var(--gray-500); margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    /* Book button */
+    .book-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; padding: 7px 12px;
+      font-size: 0.75rem; font-family: 'Inter', sans-serif; font-weight: 600;
+      border: none; border-radius: 5px; cursor: pointer;
+      transition: all 0.12s; margin-top: auto;
+      background: var(--gray-900); color: var(--white);
+    }
+    .book-btn:hover { background: var(--black); }
+    .book-btn.disabled {
+      background: var(--gray-100); color: var(--gray-400);
+      cursor: default; border: 1px solid var(--gray-200);
+    }
+
+    /* ── Feedback Section ── */
+    .feedback-section {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 28px;
+      max-width: 600px;
+    }
+    .feedback-section h2 {
+      font-size: 1rem; font-weight: 600; color: var(--gray-900);
+      margin-bottom: 4px;
+    }
+    .feedback-section > p {
+      font-size: 0.82rem; color: var(--gray-400); margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 0.78rem; font-weight: 500;
+      color: var(--gray-600); margin-bottom: 6px;
+    }
+    .form-select, .form-textarea {
+      width: 100%; padding: 10px 14px;
+      font-size: 0.85rem; font-family: 'Inter', sans-serif;
+      border: 1px solid var(--gray-200); border-radius: 6px;
+      outline: none; background: var(--white); color: var(--gray-900);
+      transition: border-color 0.15s;
+    }
+    .form-select:focus, .form-textarea:focus { border-color: var(--gray-400); }
+    .form-textarea { min-height: 80px; resize: vertical; }
+    .form-textarea::placeholder { color: var(--gray-400); }
+    .submit-btn {
+      padding: 10px 24px; font-size: 0.82rem; font-family: 'Inter', sans-serif;
+      font-weight: 600; background: var(--gray-900); color: var(--white);
+      border: none; border-radius: 6px; cursor: pointer; transition: all 0.12s;
+    }
+    .submit-btn:hover { background: var(--black); }
+    .submit-btn:disabled {
+      background: var(--gray-200); color: var(--gray-400); cursor: default;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px);
+      background: var(--gray-900); color: var(--white);
+      padding: 12px 24px; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 400; z-index: 9000;
+      opacity: 0; transition: all 0.2s; pointer-events: none;
+      max-width: 90vw; text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .page-header { padding: 0 16px; }
+      .header-inner { height: 52px; }
+      .portal-content { padding: 12px 12px 60px; }
+      .advisor-grid {
+        grid-template-columns: 1fr; gap: 8px;
+      }
+      .feedback-section { padding: 16px; }
+      .pw-card, .identity-card { padding: 36px 24px; }
+    }
+
+    @media (min-width: 1200px) {
+      .advisor-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (min-width: 1600px) {
+      .advisor-grid { grid-template-columns: repeat(5, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Gate -->
+  <div id="password-gate" class="pw-overlay">
+    <div class="pw-card">
+      <img src="onx-logo.png" alt="Onassis ONX">
+      <p>Enter password to continue</p>
+      <input id="pw-input" type="password" placeholder="Password" autofocus class="pw-input">
+      <button id="pw-submit" class="pw-submit">Continue</button>
+      <p id="pw-error" class="pw-error">Incorrect password</p>
+    </div>
+  </div>
+
+  <!-- Identity Picker -->
+  <div id="identity-picker" class="identity-overlay" style="display:none">
+    <div class="identity-card">
+      <img src="onx-logo.png" alt="Onassis ONX">
+      <p>Select your name to get started</p>
+      <input type="text" id="identity-search" class="identity-search" placeholder="Search your name...">
+      <div id="identity-list" class="identity-list"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content" style="display:none">
+    <header class="page-header">
+      <div class="header-inner">
+        <div class="header-left">
+          <img src="onx-logo.png" alt="ONX">
+          <span class="page-title">Members Portal</span>
+        </div>
+        <div class="header-right">
+          <span>Signed in as <strong id="identity-name"></strong></span>
+          <a class="change-link" id="change-identity">(change)</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="portal-content">
+      <div class="section-header">
+        <h2>Office Hours</h2>
+        <p>Book a 30-minute session with an ONX advisor</p>
+      </div>
+
+      <div class="advisor-grid" id="advisorGrid"></div>
+
+      <div class="feedback-section" id="feedbackSection">
+        <h2>Meeting Feedback</h2>
+        <p>Already had your meeting? Share a quick update.</p>
+        <form id="feedbackForm">
+          <div class="form-group">
+            <label class="form-label" for="feedbackAdvisor">Advisor</label>
+            <select id="feedbackAdvisor" class="form-select" required>
+              <option value="">Select advisor...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="feedbackText">How was the meeting?</label>
+            <textarea id="feedbackText" class="form-textarea" placeholder="What did you discuss? Any highlights?" required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="followUpText">Any follow-up needed?</label>
+            <textarea id="followUpText" class="form-textarea" placeholder="Introductions, resources, next steps..." style="min-height:60px"></textarea>
+          </div>
+          <button type="submit" class="submit-btn" id="feedbackSubmit">Submit Feedback</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function() {
+    // === Embedded Data ===
+    const advisors = [{"name": "Amy Seidenwurm", "organization": "AGOG", "tags": ["VR/AR", "Doc"], "booking_link": "", "matched_members": ["Andrew Thomas Huang", "Ali Santana", "Chloe Alexandra Thompson"], "next_available": ""}, {"name": "Antoine Cayrol", "organization": "Atlas V", "tags": ["VR/AR", "Doc"], "booking_link": "", "matched_members": ["Idris Brewster", "Andrew Thomas Huang", "Graham Sack", "Jiabao Li"], "next_available": ""}, {"name": "Christiane Paul", "organization": "Whitney Museum of American Art", "tags": ["AI", "Visual Art"], "booking_link": "", "matched_members": ["Ayoung Kim", "Xin Liu", "Jazsalyn", "Nouf Aljowaysir", "Matt McCorkle"], "next_available": ""}, {"name": "Gabe Whaley", "organization": "MSCF", "tags": ["Visual Art", "Games", "Media Performance"], "booking_link": "https://calendar.app.google/AUh2Bz9Y6oXtRifd8", "matched_members": ["Theo Triantafyllidis", "Sarah Rothberg", "Viola He", "Miriam Simun"], "next_available": "4/15 9am, 4/22 9am, 4/22 9:30am, 4/29 9am, 4/29 9:30am, 5/6 9am"}, {"name": "Gabriel Florenz", "organization": "Pioneer Works", "tags": ["Visual Art", "Media Performance", "AI", "Sound"], "booking_link": "", "matched_members": ["Georgios Cherouvim", "Chloe Alexandra Thompson", "Matthew D. Gantt"], "next_available": ""}, {"name": "Gabrielle Jenks", "organization": "Factory International", "tags": ["VR/AR", "Games"], "booking_link": "", "matched_members": ["Alfredo Salazar-Caro", "Antigoni Tsagaropoulou", "Kevin Peter He"], "next_available": ""}, {"name": "Gaby Darbyshire", "organization": "Dangerous Ventures", "tags": ["VR/AR", "Visual Art"], "booking_link": "https://calendar.app.google/Pa565jtHt52F4jeG6", "matched_members": ["Reese Donohue", "Brandon Powers", "Glenn Cantave", "Sadah Espii Proctor", "Adelle Lin"], "next_available": "Needs to add bookings"}, {"name": "Ingrid Kopp", "organization": "Electric South", "tags": ["VR/AR", "Doc"], "booking_link": "", "matched_members": ["Damara Inglés", "Yara Feghali", "Kidus Hailesilassie", "Deniz Tortum", "MaryAnn Talavera"], "next_available": ""}, {"name": "Irini Mirena Papadimitriou", "organization": "Diriyah Art Futures", "tags": ["AI", "Visual Art"], "booking_link": "", "matched_members": ["Jiabao Li", "Ashley Zelínskie", "Jazsalyn", "Nouf Aljowaysir"], "next_available": ""}, {"name": "Jake Sally", "organization": "Jadu", "tags": ["VR/AR", "Games", "Mocap"], "booking_link": "https://calendar.app.google/JhtfSTnYM3cPeWCf6", "matched_members": ["Elie Zananiri", "Jeremy Kamal", "Cameron Kostopoulos", "Sam Butin", "Kordae Jatafa Henry"], "next_available": "Needs to add bookings"}, {"name": "James George", "organization": "Adobe", "tags": ["VR/AR", "Mocap"], "booking_link": "https://calendar.app.google/Ngd637THKVqPXRMAA", "matched_members": ["Huntrezz Janos", "Kordae Jatafa Henry", "MaryAnn Talavera", "Christina Elizabeth Borins", "Milica Zec"], "next_available": "Needs to add bookings"}, {"name": "Jimmy Cheng", "organization": "Digital Domain", "tags": ["VR/AR", "AI"], "booking_link": "https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ2X9t_LbtanG9Ve9zD1gav5zDbuElNi2cgqwWAihZDMsZOWvVHPvBAN-iaHmMuoxTHsuL87ML8p", "matched_members": ["Viola He", "Akmyrat Tuyliyev", "Cameron Kostopoulos"], "next_available": "4/14 3am, 4/14 3:30am, 4/14 4am, 4/14 4:30am, 4/15 3am, 4/15 3:30am"}, {"name": "Jordana Leigh", "organization": "Lincoln Center", "tags": ["Theatre", "Media Performance", "Visual Art"], "booking_link": "", "matched_members": ["Kathryn Hamilton", "Miriam Simun", "May Abdalla"], "next_available": ""}, {"name": "Julia Kaganskiy", "organization": "Curator", "tags": ["AI", "Visual Art", "Media Performance"], "booking_link": "https://calendar.app.google/RzbtVn8LgirRo5vd7", "matched_members": ["Xin Liu", "Stephanie Dinkins", "Andrew Thomas Huang", "Matt McCorkle"], "next_available": "Needs to add bookings"}, {"name": "Keri Elmsly", "organization": "PACT / former ACMI", "tags": ["VR/AR", "Visual Art"], "booking_link": "", "matched_members": ["LaJuné McMillian", "Kevin Peter He", "Winslow Porter", "Idris Brewster"], "next_available": ""}, {"name": "Loren Hammonds", "organization": "TIME Studios", "tags": ["VR/AR", "Doc"], "booking_link": "", "matched_members": ["Deniz Tortum", "Jon Cohrs", "Michaela A. Ternasky-Holland", "Kidus Hailesilassie", "Modesto Flako Jimenez"], "next_available": ""}, {"name": "Luke DuBois", "organization": "NYU IDM", "tags": ["VR/AR", "AI", "Sound", "Mocap"], "booking_link": "", "matched_members": ["Matthew D. Gantt", "Peter Burr", "Matt Pinner"], "next_available": ""}, {"name": "Maria Roussou", "organization": "Academic / Artist", "tags": ["VR/AR", "Games"], "booking_link": "", "matched_members": ["Kat Mustatea", "Eirini Linardaki", "Michael Sawyer"], "next_available": ""}, {"name": "Mark Russell", "organization": "Under The Radar", "tags": ["Theatre", "Media Performance"], "booking_link": "", "matched_members": ["Matt Romein", "Kevin Peter He", "Andrew Schneider"], "next_available": ""}, {"name": "Michael Connor", "organization": "Rhizome", "tags": ["AI", "Visual Art"], "booking_link": "", "matched_members": ["Kevin Peter He", "Marc Da Costa", "Alexander Porter"], "next_available": ""}, {"name": "Myriam Achard", "organization": "PHI", "tags": ["VR/AR", "Doc", "Visual Art"], "booking_link": "", "matched_members": ["Ainslee Alem Robson", "Ayoung Kim", "Stephanie Dinkins"], "next_available": ""}, {"name": "Nicola Triscott", "organization": "FACT Liverpool", "tags": ["AI", "Doc", "Visual Art"], "booking_link": "", "matched_members": ["Graham Sack", "Adelle Lin", "Stephanie Dinkins", "Marc Da Costa"], "next_available": ""}, {"name": "Noam Segal", "organization": "Guggenheim Museum", "tags": ["Visual Art", "AI", "Media Performance"], "booking_link": "https://calendar.app.google/8a7BwAjQBwDGSDqQ8", "matched_members": ["Nouf Aljowaysir", "Kathryn Hamilton", "Xin Liu", "Stephanie Dinkins"], "next_available": "4/17 9am, 4/17 9:30am, 4/20 9am, 4/24 9am, 4/24 9:30am, 4/27 9am"}, {"name": "Pamela Tatge", "organization": "Jacob's Pillow", "tags": ["Theatre", "Mocap", "Media Performance"], "booking_link": "https://calendar.app.google/HoUiqVJHXxdjtPTHA", "matched_members": ["Yolanda Markopoulou", "Annie Saunders", "Tei Blow", "Lisa Jamhoury"], "next_available": "5/6 2pm, 5/6 2:30pm, 5/20 3pm, 5/20 3:30pm, 6/1 2pm, 6/1 2:30pm"}, {"name": "RoseLee Goldberg", "organization": "Performa", "tags": ["Theatre", "Visual Art", "Media Performance"], "booking_link": "https://calendar.app.google/DXGZQcF2jBtY8aSt9", "matched_members": ["Sarah Silverblatt-Buser", "Modesto Flako Jimenez", "Kathryn Hamilton", "Andrew Schneider", "Sarah Rothberg", "May Abdalla"], "next_available": "5/8 10:30am, 5/8 11:30am, 5/8 12:30pm, 5/8 1:30pm, 5/8 2:30pm, 6/5 10:30am"}, {"name": "Salome Asega", "organization": "NEW INC", "tags": ["AI", "Games"], "booking_link": "https://calendar.app.google/hbDpHxWDtV3tVTPx6", "matched_members": ["Reese Antoinette", "Eva Davidova", "Steven Schardt"], "next_available": "6/18 10am, 6/18 10:30am, 9/28 12pm, 9/28 12:30pm"}, {"name": "Tamar Clarke-Brown", "organization": "Serpentine", "tags": ["AI", "Games", "Visual Art"], "booking_link": "https://calendar.app.google/zB3dR6Mf9BZcb9ibA", "matched_members": ["Alfredo Salazar-Caro", "Matt McCorkle", "Peter Burr", "Sarah Rothberg", "Elie Zananiri"], "next_available": "4/17 5am, 4/17 5:30am, 4/17 6am, 4/17 6:30am, 4/17 7am, 4/17 7:30am"}, {"name": "Veronika Liebl", "organization": "Ars Electronica", "tags": ["AI", "Sound"], "booking_link": "", "matched_members": ["Chloe Alexandra Thompson", "Shuruq Tramontini", "Tamiko Thiel", "May Abdalla"], "next_available": ""}];
+    const members = [{"name": "Adelle Lin", "tags": ["VR/AR", "Visual Art"]}, {"name": "Ainslee Alem Robson", "tags": ["VR/AR", "Mocap", "Visual Art", "Doc"]}, {"name": "Akmyrat Tuyliyev", "tags": ["VR/AR", "Doc"]}, {"name": "Alexander Porter", "tags": ["VR/AR", "Media Performance", "Visual Art", "Doc"]}, {"name": "Alfredo Salazar-Caro", "tags": ["VR/AR", "Games", "Visual Art"]}, {"name": "Ali Santana", "tags": ["Games", "Sound"]}, {"name": "Andrew Schneider", "tags": ["Theatre", "Media Performance", "Sound"]}, {"name": "Andrew Thomas Huang", "tags": ["VR/AR", "AI", "Theatre", "Media Performance", "Visual Art"]}, {"name": "Annie Saunders", "tags": ["Theatre", "Media Performance", "Sound"]}, {"name": "Antigoni Tsagkaropoulou", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Ashley Zelinskie", "tags": ["VR/AR", "Visual Art"]}, {"name": "Ayoung Kim", "tags": ["VR/AR", "AI", "Games", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Brandon Powers", "tags": ["VR/AR", "Media Performance"]}, {"name": "Cameron Kostopoulos", "tags": ["VR/AR", "AI", "Games", "Visual Art"]}, {"name": "Chloe Alexandra Thompson", "tags": ["Media Performance", "Sound"]}, {"name": "Christina Elizabeth Borins", "tags": ["VR/AR", "Doc"]}, {"name": "Damara Inglês", "tags": ["VR/AR", "AI", "Games"]}, {"name": "Deniz Tortum", "tags": ["VR/AR", "Visual Art", "Doc"]}, {"name": "Eirini Linardaki", "tags": ["Visual Art"]}, {"name": "Elie Zananiri", "tags": ["VR/AR", "Games", "Mocap", "Visual Art"]}, {"name": "Eva Davidova", "tags": ["Media Performance"]}, {"name": "Georgios Cherouvim", "tags": ["Media Performance", "Visual Art", "Sound"]}, {"name": "Glenn Cantave", "tags": ["VR/AR", "Visual Art"]}, {"name": "Graham Sack", "tags": ["VR/AR", "AI", "Doc"]}, {"name": "Huntrezz Janos", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Idris Brewster", "tags": ["VR/AR", "Visual Art"]}, {"name": "Jazsalyn", "tags": ["AI", "Visual Art", "Doc"]}, {"name": "Jeremy Kamal", "tags": ["VR/AR", "Mocap", "Visual Art"]}, {"name": "Jiabao Li", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art", "Doc"]}, {"name": "Jon Cohrs", "tags": ["VR/AR", "Sound", "Doc"]}, {"name": "Kat Mustatea", "tags": ["AI", "Mocap", "Media Performance", "Sound"]}, {"name": "Kathryn Hamilton", "tags": ["VR/AR", "Theatre", "Media Performance", "Visual Art", "Doc"]}, {"name": "Kevin Peter He", "tags": ["VR/AR", "Games", "Mocap", "Media Performance", "Sound"]}, {"name": "Kidus Hailesilassie", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art", "Doc"]}, {"name": "Kordae Jatafa Henry", "tags": ["VR/AR", "Games", "Mocap", "Media Performance"]}, {"name": "LaJuné McMillian", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Lisa Jamhoury", "tags": ["VR/AR", "Mocap", "Media Performance"]}, {"name": "Marc Da Costa", "tags": ["VR/AR", "AI", "Visual Art", "Doc"]}, {"name": "MaryAnn Talavera", "tags": ["VR/AR", "Mocap", "Doc"]}, {"name": "Matt McCorkle", "tags": ["VR/AR", "AI", "Games", "Media Performance", "Visual Art", "Sound"]}, {"name": "Matt Pinner", "tags": ["VR/AR", "Visual Art"]}, {"name": "Matt Romein", "tags": ["VR/AR", "Games", "Theatre", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Matthew D. Gantt", "tags": ["VR/AR", "AI", "Games", "Theatre", "Media Performance", "Sound"]}, {"name": "May Abdalla", "tags": ["VR/AR", "Theatre", "Media Performance", "Visual Art"]}, {"name": "Michael Sawyer", "tags": ["Visual Art", "Sound", "Doc"]}, {"name": "Michaela A. Ternasky-Holland", "tags": ["VR/AR", "Visual Art", "Doc"]}, {"name": "Milica Zec", "tags": ["VR/AR", "Visual Art"]}, {"name": "Miriam Simun", "tags": ["Mocap", "Media Performance", "Visual Art"]}, {"name": "Modesto Flako Jimenez", "tags": ["VR/AR", "Theatre", "Media Performance", "Doc"]}, {"name": "Nouf Aljowaysir", "tags": ["VR/AR", "AI", "Visual Art", "Doc"]}, {"name": "Peter Burr", "tags": ["VR/AR", "Games", "Media Performance", "Visual Art"]}, {"name": "Reese Antoinette", "tags": ["VR/AR", "Mocap", "Doc"]}, {"name": "Reese Donohue", "tags": ["Visual Art", "Sound"]}, {"name": "Sadah Espii Proctor", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Sam Butin", "tags": ["VR/AR", "Games", "Doc"]}, {"name": "Sarah Rothberg", "tags": ["VR/AR", "Games", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Sarah Silverblatt-Buser", "tags": ["VR/AR", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Shuruq Tramontini", "tags": ["VR/AR", "Visual Art"]}, {"name": "Stephanie Dinkins", "tags": ["VR/AR", "AI", "Media Performance", "Visual Art", "Doc"]}, {"name": "Steven Schardt", "tags": ["VR/AR", "AI", "Games"]}, {"name": "Tamiko Thiel", "tags": ["VR/AR", "Visual Art", "Doc"]}, {"name": "Tei Blow", "tags": ["Theatre", "Visual Art"]}, {"name": "Theo Triantafyllidis", "tags": ["VR/AR", "Games", "Mocap", "Media Performance", "Visual Art"]}, {"name": "Viola He", "tags": ["VR/AR", "Games", "Media Performance", "Visual Art"]}, {"name": "Winslow Porter", "tags": ["VR/AR", "AI", "Visual Art"]}, {"name": "Xin Liu", "tags": ["VR/AR", "AI", "Media Performance", "Visual Art"]}, {"name": "Yara Feghali", "tags": ["VR/AR", "Games", "Visual Art", "Doc"]}, {"name": "Yolanda Markopoulou", "tags": ["VR/AR", "Theatre", "Mocap", "Media Performance"]}];
+    const ALL_TAGS = ["VR/AR", "AI", "Games", "Theatre", "Mocap", "Media Performance", "Visual Art", "Sound", "Doc"];
+
+    // Lookup: member name → tags
+    const memberByName = {};
+    members.forEach(function(m) { memberByName[m.name] = m; });
+
+    // === Password Gate ===
+    var PW_HASH = '342fe6ed3255eb43a124cd507b982a22ea8b31c0244ec8a0e1307788641e12e4';
+
+    async function sha256(str) {
+      var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    }
+
+    function unlockPassword() {
+      document.getElementById('password-gate').style.display = 'none';
+      checkIdentity();
+    }
+
+    if (localStorage.getItem('onx_member_auth') === PW_HASH) {
+      unlockPassword();
+    }
+
+    async function tryPassword() {
+      var input = document.getElementById('pw-input');
+      var h = await sha256(input.value);
+      if (h === PW_HASH) {
+        localStorage.setItem('onx_member_auth', PW_HASH);
+        unlockPassword();
+      } else {
+        document.getElementById('pw-error').style.display = 'block';
+        input.value = '';
+      }
+    }
+
+    document.getElementById('pw-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') tryPassword();
+    });
+    document.getElementById('pw-submit').addEventListener('click', tryPassword);
+
+    // === Identity Picker ===
+    function checkIdentity() {
+      var saved = localStorage.getItem('onx_member_name');
+      if (saved && memberByName[saved]) {
+        showMainContent(saved);
+      } else {
+        showIdentityPicker();
+      }
+    }
+
+    function showIdentityPicker() {
+      document.getElementById('identity-picker').style.display = 'flex';
+      document.getElementById('main-content').style.display = 'none';
+
+      var list = document.getElementById('identity-list');
+      list.innerHTML = '';
+
+      members.forEach(function(m) {
+        var item = document.createElement('div');
+        item.className = 'identity-item';
+        item.textContent = m.name;
+        item.setAttribute('data-name', m.name.toLowerCase());
+        item.addEventListener('click', function() {
+          localStorage.setItem('onx_member_name', m.name);
+          document.getElementById('identity-picker').style.display = 'none';
+          showMainContent(m.name);
+        });
+        list.appendChild(item);
+      });
+
+      var searchInput = document.getElementById('identity-search');
+      searchInput.value = '';
+      searchInput.focus();
+      searchInput.addEventListener('input', function() {
+        var q = this.value.toLowerCase();
+        var items = list.querySelectorAll('.identity-item');
+        items.forEach(function(el) {
+          el.classList.toggle('hidden', q && el.getAttribute('data-name').indexOf(q) === -1);
+        });
+      });
+    }
+
+    document.getElementById('change-identity').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('onx_member_name');
+      showIdentityPicker();
+    });
+
+    // === Main Content ===
+    function showMainContent(memberName) {
+      document.getElementById('identity-picker').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      document.getElementById('identity-name').textContent = memberName;
+
+      renderAdvisorGrid(memberName);
+      populateFeedbackAdvisors();
+      handleDeepLinks();
+    }
+
+    // === Advisor Grid ===
+    function renderAdvisorGrid(memberName) {
+      var grid = document.getElementById('advisorGrid');
+      grid.innerHTML = '';
+
+      var member = memberByName[memberName] || { tags: [] };
+      var memberTags = new Set(member.tags || []);
+
+      advisors.forEach(function(advisor) {
+        var card = document.createElement('div');
+        card.className = 'advisor-card';
+        card.setAttribute('data-advisor', advisor.name);
+
+        var isRecommended = advisor.matched_members && advisor.matched_members.indexOf(memberName) !== -1;
+        var hasBooking = !!advisor.booking_link;
+
+        // Card header
+        var header = document.createElement('div');
+        header.className = 'card-header';
+        var nameEl = document.createElement('div');
+        nameEl.className = 'advisor-name';
+        nameEl.textContent = advisor.name;
+        header.appendChild(nameEl);
+        if (advisor.organization) {
+          var orgEl = document.createElement('div');
+          orgEl.className = 'advisor-org';
+          orgEl.textContent = advisor.organization;
+          header.appendChild(orgEl);
+        }
+        card.appendChild(header);
+
+        // Tags
+        if (advisor.tags && advisor.tags.length) {
+          var tagsRow = document.createElement('div');
+          tagsRow.className = 'tags-row';
+          advisor.tags.forEach(function(tag) {
+            var pill = document.createElement('span');
+            pill.className = 'tag-pill';
+            if (memberTags.has(tag)) pill.classList.add('overlap');
+            pill.textContent = tag;
+            tagsRow.appendChild(pill);
+          });
+          card.appendChild(tagsRow);
+        }
+
+        // Recommended badge
+        if (isRecommended) {
+          var badge = document.createElement('div');
+          badge.className = 'recommended-badge';
+          badge.textContent = 'Recommended for you';
+          card.appendChild(badge);
+        }
+
+        // Availability
+        var avail = document.createElement('div');
+        avail.className = 'availability';
+        avail.textContent = advisor.next_available || 'Check calendar for availability';
+        card.appendChild(avail);
+
+        // Book button
+        var btn = document.createElement('button');
+        btn.className = 'book-btn';
+        if (hasBooking) {
+          btn.textContent = 'Book Office Hours';
+          btn.addEventListener('click', function() {
+            handleBooking(memberName, advisor.name, advisor.booking_link);
+          });
+        } else {
+          btn.textContent = 'Coming soon';
+          btn.classList.add('disabled');
+        }
+        card.appendChild(btn);
+
+        grid.appendChild(card);
+      });
+    }
+
+    // === Booking Flow ===
+    function handleBooking(memberName, advisorName, bookingLink) {
+      // Log the booking (fire-and-forget, graceful degradation)
+      fetch('https://onx-tools.netlify.app/.netlify/functions/log-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          member_name: memberName,
+          advisor_name: advisorName,
+          booking_link: bookingLink,
+        }),
+      }).then(function(resp) {
+        if (resp.ok) {
+          showToast('Booking logged! After your meeting, come back to share a quick update.');
+        }
+      }).catch(function() {
+        // Silently fail — still open the link
+      });
+
+      // Open booking link regardless
+      window.open(bookingLink, '_blank');
+    }
+
+    // === Feedback Form ===
+    function populateFeedbackAdvisors() {
+      var select = document.getElementById('feedbackAdvisor');
+      // Keep the first "Select advisor..." option
+      while (select.options.length > 1) select.remove(1);
+      advisors.forEach(function(a) {
+        var opt = document.createElement('option');
+        opt.value = a.name;
+        opt.textContent = a.name;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var memberName = localStorage.getItem('onx_member_name');
+      var advisorName = document.getElementById('feedbackAdvisor').value;
+      var feedback = document.getElementById('feedbackText').value.trim();
+      var followUp = document.getElementById('followUpText').value.trim();
+
+      if (!advisorName || !feedback) return;
+
+      var btn = document.getElementById('feedbackSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      // Save to Airtable
+      fetch('https://onx-tools.netlify.app/.netlify/functions/submit-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          member_name: memberName,
+          advisor_name: advisorName,
+          feedback: feedback,
+          follow_up: followUp,
+        }),
+      }).then(function(resp) {
+        if (resp.ok) {
+          showToast('Thank you! Your feedback has been submitted.');
+          document.getElementById('feedbackForm').reset();
+        } else {
+          showToast('Something went wrong. Please try again.');
+        }
+      }).catch(function() {
+        showToast('Network error. Please try again.');
+      }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Submit Feedback';
+      });
+
+    });
+
+    // === Deep Links ===
+    function handleDeepLinks() {
+      var hash = window.location.hash;
+      if (!hash) return;
+
+      var params = {};
+      hash.substring(1).split('&').forEach(function(part) {
+        var kv = part.split('=');
+        if (kv.length === 2) params[kv[0]] = decodeURIComponent(kv[1].replace(/\+/g, ' '));
+      });
+
+      if (params.advisor) {
+        var card = document.querySelector('[data-advisor="' + params.advisor + '"]');
+        if (card) {
+          card.classList.add('highlighted');
+          setTimeout(function() {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 200);
+        }
+      }
+
+      if (params.feedback) {
+        var select = document.getElementById('feedbackAdvisor');
+        for (var i = 0; i < select.options.length; i++) {
+          if (select.options[i].value === params.feedback) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
+        setTimeout(function() {
+          document.getElementById('feedbackSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+      }
+    }
+
+    // === Toast ===
+    var toastTimer;
+    function showToast(message) {
+      var el = document.getElementById('toast');
+      el.textContent = message;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { el.classList.remove('show'); }, 4000);
+    }
+
+  })();
+  </script>
+</body>
+</html>
