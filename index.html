@@ -506,7 +506,7 @@
         // Card header
         var header = document.createElement('div');
         header.className = 'card-header';
-        var profileSlug = PROFILE_SLUGS[advisor.name];
+        var profileSlug = (typeof PROFILE_SLUGS !== 'undefined' && PROFILE_SLUGS[advisor.name]) || '';
         if (profileSlug) {
           var nameEl = document.createElement('a');
           nameEl.className = 'advisor-name';
