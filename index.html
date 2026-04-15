@@ -262,6 +262,35 @@
       background: var(--gray-200); color: var(--gray-400); cursor: default;
     }
 
+    /* ── Meeting Confirmation Banners ── */
+    .confirm-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; padding: 8px 10px;
+      background: #fef9e7; border: 1px solid #f5d860;
+      border-radius: 6px; gap: 8px;
+    }
+    .confirm-banner .confirm-text {
+      font-size: 0.72rem; color: var(--gray-700); font-weight: 500; line-height: 1.3;
+    }
+    .confirm-btn {
+      flex-shrink: 0; padding: 5px 14px;
+      font-size: 0.7rem; font-family: 'Inter', sans-serif; font-weight: 600;
+      background: var(--gray-900); color: var(--white);
+      border: none; border-radius: 4px; cursor: pointer;
+      transition: all 0.12s; white-space: nowrap;
+    }
+    .confirm-btn:hover { background: var(--black); }
+    .confirmed-banner {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 10px; padding: 8px 10px;
+      background: #f0fdf4; border: 1px solid #86efac;
+      border-radius: 6px;
+    }
+    .confirmed-banner .confirm-text {
+      font-size: 0.72rem; color: #166534; font-weight: 500;
+    }
+    .check-icon { font-size: 0.8rem; }
+
     /* ── Toast ── */
     .toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px);
@@ -364,15 +393,6 @@
     </div>
   </div>
 
-  <!-- Hidden Netlify Form for email notifications -->
-  <form name="meeting-feedback" data-netlify="true" netlify-honeypot="bot-field" hidden>
-    <input name="bot-field">
-    <input name="member_name" type="text">
-    <input name="advisor_name" type="text">
-    <textarea name="feedback"></textarea>
-    <textarea name="follow_up"></textarea>
-  </form>
-
   <div class="toast" id="toast"></div>
 
   <script>
@@ -385,6 +405,50 @@
     // Lookup: member name → tags
     const memberByName = {};
     members.forEach(function(m) { memberByName[m.name] = m; });
+
+    // === Pending Bookings (localStorage) ===
+    function getPendingBookings() {
+      try {
+        var data = JSON.parse(localStorage.getItem('onx_pending_bookings') || '[]');
+        // Auto-cleanup: remove entries older than 30 days
+        var cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        data = data.filter(function(b) { return b.timestamp > cutoff; });
+        localStorage.setItem('onx_pending_bookings', JSON.stringify(data));
+        return data;
+      } catch (e) { return []; }
+    }
+
+    function addPendingBooking(memberName, advisorName) {
+      var bookings = getPendingBookings();
+      // Don't add duplicate for same member+advisor
+      var exists = bookings.some(function(b) {
+        return b.member === memberName && b.advisor === advisorName && !b.confirmed;
+      });
+      if (!exists) {
+        bookings.push({ member: memberName, advisor: advisorName, timestamp: Date.now(), confirmed: false });
+        localStorage.setItem('onx_pending_bookings', JSON.stringify(bookings));
+      }
+    }
+
+    function markBookingConfirmed(memberName, advisorName) {
+      var bookings = getPendingBookings();
+      bookings.forEach(function(b) {
+        if (b.member === memberName && b.advisor === advisorName && !b.confirmed) {
+          b.confirmed = true;
+        }
+      });
+      localStorage.setItem('onx_pending_bookings', JSON.stringify(bookings));
+    }
+
+    function getBookingStatus(memberName, advisorName) {
+      var bookings = getPendingBookings();
+      for (var i = bookings.length - 1; i >= 0; i--) {
+        if (bookings[i].member === memberName && bookings[i].advisor === advisorName) {
+          return bookings[i].confirmed ? 'confirmed' : 'pending';
+        }
+      }
+      return null;
+    }
 
     // === Password Gate ===
     var PW_HASH = '342fe6ed3255eb43a124cd507b982a22ea8b31c0244ec8a0e1307788641e12e4';
@@ -563,6 +627,49 @@
         }
         card.appendChild(btn);
 
+        // Confirmation banner (if member has a pending/confirmed booking)
+        var bookingStatus = getBookingStatus(memberName, advisor.name);
+        if (bookingStatus === 'pending') {
+          var banner = document.createElement('div');
+          banner.className = 'confirm-banner';
+          banner.innerHTML = '<span class="confirm-text">Did your meeting happen?</span>';
+          var confirmBtn = document.createElement('button');
+          confirmBtn.className = 'confirm-btn';
+          confirmBtn.textContent = 'Yes, it happened';
+          confirmBtn.addEventListener('click', (function(advName, bannerEl) {
+            return function() {
+              confirmBtn.disabled = true;
+              confirmBtn.textContent = 'Confirming...';
+              fetch('https://onx-tools.netlify.app/.netlify/functions/confirm-meeting', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ member_name: memberName, advisor_name: advName }),
+              }).then(function(resp) {
+                if (resp.ok) {
+                  markBookingConfirmed(memberName, advName);
+                  bannerEl.outerHTML = '<div class="confirmed-banner"><span class="check-icon">&#10003;</span><span class="confirm-text">Meeting confirmed - thanks!</span></div>';
+                  showToast('Meeting confirmed! You can also share feedback below.');
+                } else {
+                  confirmBtn.disabled = false;
+                  confirmBtn.textContent = 'Yes, it happened';
+                  showToast('Could not confirm. Please try again.');
+                }
+              }).catch(function() {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Yes, it happened';
+                showToast('Network error. Please try again.');
+              });
+            };
+          })(advisor.name, banner));
+          banner.appendChild(confirmBtn);
+          card.appendChild(banner);
+        } else if (bookingStatus === 'confirmed') {
+          var confirmedBanner = document.createElement('div');
+          confirmedBanner.className = 'confirmed-banner';
+          confirmedBanner.innerHTML = '<span class="check-icon">&#10003;</span><span class="confirm-text">Meeting confirmed - thanks!</span>';
+          card.appendChild(confirmedBanner);
+        }
+
         grid.appendChild(card);
       });
     }
@@ -580,7 +687,10 @@
         }),
       }).then(function(resp) {
         if (resp.ok) {
-          showToast('Booking logged! After your meeting, come back to share a quick update.');
+          addPendingBooking(memberName, advisorName);
+          showToast('Booking logged! After your meeting, come back to confirm it happened.');
+          // Re-render grid to show confirmation banner
+          renderAdvisorGrid(memberName);
         }
       }).catch(function() {
         // Silently fail — still open the link
@@ -640,18 +750,6 @@
         btn.textContent = 'Submit Feedback';
       });
 
-      // Also submit to Netlify Forms (triggers email notification)
-      var formBody = new URLSearchParams();
-      formBody.append('form-name', 'meeting-feedback');
-      formBody.append('member_name', memberName);
-      formBody.append('advisor_name', advisorName);
-      formBody.append('feedback', feedback);
-      formBody.append('follow_up', followUp);
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formBody.toString(),
-      }).catch(function() {});
     });
 
     // === Deep Links ===
