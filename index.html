@@ -632,7 +632,7 @@
         if (bookingStatus === 'pending') {
           var banner = document.createElement('div');
           banner.className = 'confirm-banner';
-          banner.innerHTML = '<span class="confirm-text">When is your meeting with ' + advisor.name + '?</span>';
+          banner.innerHTML = '<span class="confirm-text">Did you book? When is your meeting with ' + advisor.name + '?</span>';
           var dateRow = document.createElement('div');
           dateRow.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:6px;';
           var dateInput = document.createElement('input');
@@ -648,7 +648,7 @@
               if (!meetingDate) { input.focus(); return; }
               confirmBtn.disabled = true;
               confirmBtn.textContent = '...';
-              fetch('https://onx-tools.netlify.app/.netlify/functions/confirm-meeting', {
+              fetch('https://onx-api.onassis-onx.workers.dev/api/confirm-meeting', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ member_name: memberName, advisor_name: advName, meeting_date: meetingDate }),
@@ -687,7 +687,7 @@
     // === Booking Flow ===
     function handleBooking(memberName, advisorName, bookingLink) {
       // Log the booking (fire-and-forget, graceful degradation)
-      fetch('https://onx-tools.netlify.app/.netlify/functions/log-booking', {
+      fetch('https://onx-api.onassis-onx.workers.dev/api/log-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -737,7 +737,7 @@
       btn.textContent = 'Submitting...';
 
       // Save to Airtable
-      fetch('https://onx-tools.netlify.app/.netlify/functions/submit-feedback', {
+      fetch('https://onx-api.onassis-onx.workers.dev/api/submit-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
