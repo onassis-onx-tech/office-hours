@@ -632,41 +632,51 @@
         if (bookingStatus === 'pending') {
           var banner = document.createElement('div');
           banner.className = 'confirm-banner';
-          banner.innerHTML = '<span class="confirm-text">Did your meeting happen?</span>';
+          banner.innerHTML = '<span class="confirm-text">When is your meeting with ' + advisor.name + '?</span>';
+          var dateRow = document.createElement('div');
+          dateRow.style.cssText = 'display:flex; align-items:center; gap:6px; margin-top:6px;';
+          var dateInput = document.createElement('input');
+          dateInput.type = 'text';
+          dateInput.placeholder = 'e.g. 4/27';
+          dateInput.style.cssText = 'width:80px; padding:4px 8px; font-size:0.72rem; font-family:Inter,sans-serif; border:1px solid #d4d4d4; border-radius:4px; outline:none;';
           var confirmBtn = document.createElement('button');
           confirmBtn.className = 'confirm-btn';
-          confirmBtn.textContent = 'Yes, it happened';
-          confirmBtn.addEventListener('click', (function(advName, bannerEl) {
+          confirmBtn.textContent = 'OK';
+          confirmBtn.addEventListener('click', (function(advName, bannerEl, input) {
             return function() {
+              var meetingDate = input.value.trim();
+              if (!meetingDate) { input.focus(); return; }
               confirmBtn.disabled = true;
-              confirmBtn.textContent = 'Confirming...';
+              confirmBtn.textContent = '...';
               fetch('https://onx-tools.netlify.app/.netlify/functions/confirm-meeting', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ member_name: memberName, advisor_name: advName }),
+                body: JSON.stringify({ member_name: memberName, advisor_name: advName, meeting_date: meetingDate }),
               }).then(function(resp) {
                 if (resp.ok) {
                   markBookingConfirmed(memberName, advName);
-                  bannerEl.outerHTML = '<div class="confirmed-banner"><span class="check-icon">&#10003;</span><span class="confirm-text">Meeting confirmed - thanks!</span></div>';
-                  showToast('Meeting confirmed! You can also share feedback below.');
+                  bannerEl.outerHTML = '<div class="confirmed-banner"><span class="check-icon">&#10003;</span><span class="confirm-text">Booked ' + meetingDate + ' - thanks!</span></div>';
+                  showToast('Booking confirmed! After your meeting, come back to share feedback.');
                 } else {
                   confirmBtn.disabled = false;
-                  confirmBtn.textContent = 'Yes, it happened';
+                  confirmBtn.textContent = 'OK';
                   showToast('Could not confirm. Please try again.');
                 }
               }).catch(function() {
                 confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Yes, it happened';
+                confirmBtn.textContent = 'OK';
                 showToast('Network error. Please try again.');
               });
             };
-          })(advisor.name, banner));
-          banner.appendChild(confirmBtn);
+          })(advisor.name, banner, dateInput));
+          dateRow.appendChild(dateInput);
+          dateRow.appendChild(confirmBtn);
+          banner.appendChild(dateRow);
           card.appendChild(banner);
         } else if (bookingStatus === 'confirmed') {
           var confirmedBanner = document.createElement('div');
           confirmedBanner.className = 'confirmed-banner';
-          confirmedBanner.innerHTML = '<span class="check-icon">&#10003;</span><span class="confirm-text">Meeting confirmed - thanks!</span>';
+          confirmedBanner.innerHTML = '<span class="check-icon">&#10003;</span><span class="confirm-text">Booking confirmed - thanks!</span>';
           card.appendChild(confirmedBanner);
         }
 
